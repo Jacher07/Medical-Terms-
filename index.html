@@ -3,637 +3,618 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dynamic B1 Medical Vocabulary Builder</title>
+    <title>Interactive Medical Vocabulary Explorer (B1)</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-</head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
-
-    <header class="bg-teal-600 text-white shadow-md py-4 px-6 sticky top-0 z-50 flex flex-wrap justify-between items-center">
-        <h1 class="text-2xl font-bold tracking-wide">🩺 MedVocab Builder <span class="text-xs bg-teal-800 px-2 py-1 rounded">B1 Adults</span></h1>
-        <nav class="space-x-4 mt-2 sm:mt-0">
-            <button onclick="switchMode('cards')" id="nav-cards" class="px-4 py-2 rounded-lg bg-teal-700 font-semibold shadow transition">🎴 Flashcards</button>
-            <button onclick="switchMode('quiz')" id="nav-quiz" class="px-4 py-2 rounded-lg hover:bg-teal-500 font-semibold transition">📝 Practice Quiz</button>
-        </nav>
-    </header>
-
-    <main class="flex-grow container mx-auto px-4 py-8 max-w-4xl">
-        
-        <div id="cards-view" class="block">
-            <div class="text-center mb-6">
-                <h2 class="text-xl font-bold text-slate-700">Vocabulary Flashcards</h2>
-                <p class="text-sm text-slate-500">Click the card to flip it and view definitions, examples, and phonetic breakdowns!</p>
-            </div>
-
-            <div class="perspective-1000 max-w-md mx-auto my-8">
-                <div id="flashcard" onclick="flipCard()" class="relative w-full h-[500px] cursor-pointer transition-transform duration-500 transform-style-3d bg-white rounded-2xl shadow-xl border border-slate-200">
-                    
-                    <div class="absolute inset-0 backface-hidden flex flex-col p-6 items-center justify-between">
-                        <span class="text-xs font-bold text-slate-400 self-start uppercase tracking-wider">Concept Card</span>
-                        <img id="card-img" class="w-full h-48 object-cover rounded-xl shadow-inner border border-slate-100" src="" alt="Medical Concept">
-                        <div class="text-center my-4">
-                            <h3 id="card-word" class="text-4xl font-extrabold text-teal-700 tracking-tight"></h3>
-                            <p id="card-phonetic" class="text-sm font-mono text-indigo-500 mt-1 bg-indigo-50 px-3 py-1 rounded-full inline-block"></p>
-                        </div>
-                        <div class="flex space-x-3 w-full">
-                            <button onclick="event.stopPropagation(); listenPronunciation()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-4 rounded-xl shadow flex items-center justify-center gap-2 transition">
-                                🔊 Listen
-                            </button>
-                            <button onclick="event.stopPropagation(); startVoiceRecognition('card')" id="card-mic-btn" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white font-medium py-3 px-4 rounded-xl shadow flex items-center justify-center gap-2 transition">
-                                🎙️ Speak
-                            </button>
-                        </div>
-                        <p id="card-feedback" class="text-sm font-semibold h-5 mt-2 transition duration-300"></p>
-                    </div>
-
-                    <div class="absolute inset-0 backface-hidden rotate-y-180 flex flex-col p-6 items-center justify-between bg-slate-900 text-white rounded-2xl shadow-xl">
-                        <span class="text-xs font-bold text-teal-400 self-start uppercase tracking-wider">Meaning & Application</span>
-                        <div class="w-full space-y-4 my-auto">
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Definition:</h4>
-                                <p id="card-meaning" class="text-lg leading-relaxed text-slate-200"></p>
-                            </div>
-                            <div class="border-t border-slate-700 pt-4">
-                                <h4 class="text-xs font-bold text-teal-400 uppercase tracking-widest mb-1">Example Sentence:</h4>
-                                <p id="card-example" class="text-base italic text-slate-300 bg-slate-800 p-3 rounded-lg border-l-4 border-teal-500"></p>
-                            </div>
-                        </div>
-                        <span class="text-xs text-slate-500 italic">Click card to view image again</span>
-                    </div>
-
-                </div>
-            </div>
-
-            <div class="flex justify-center items-center gap-6 mt-6">
-                <button onclick="prevItem()" class="bg-white hover:bg-slate-100 text-slate-700 font-bold p-4 rounded-full shadow-md border border-slate-200 transition">⬅️</button>
-                <span id="card-index" class="text-sm font-bold bg-slate-200 px-4 py-2 rounded-full text-slate-600">1 / 34</span>
-                <button onclick="nextItem()" class="bg-white hover:bg-slate-100 text-slate-700 font-bold p-4 rounded-full shadow-md border border-slate-200 transition">➡️</button>
-            </div>
-        </div>
-
-        <div id="quiz-view" class="hidden">
-            <div class="text-center mb-6">
-                <h2 class="text-xl font-bold text-slate-700">Contextual Practice Quiz</h2>
-                <p class="text-sm text-slate-500">Fill in the blank using the hints, audio tools, or test your voice!</p>
-            </div>
-
-            <div class="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 max-w-xl mx-auto">
-                <div class="relative mb-4">
-                    <img id="quiz-img" class="w-full h-48 object-cover rounded-xl shadow-inner border" src="" alt="Quiz Concept">
-                    <div id="quiz-confetti-origin" class="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-4 h-4 opacity-0"></div>
-                </div>
-
-                <div class="my-6">
-                    <span class="text-xs font-bold text-slate-400 block uppercase tracking-wide mb-2">Complete the Sentence:</span>
-                    <p id="quiz-sentence" class="text-xl font-medium leading-relaxed text-slate-800 bg-slate-50 p-4 rounded-xl border border-dashed border-slate-300"></p>
-                </div>
-
-                <div class="space-y-4">
-                    <input type="text" id="quiz-input" autocomplete="off" class="w-full px-4 py-3 border-2 border-slate-300 rounded-xl focus:outline-none focus:border-indigo-500 text-lg transition" placeholder="Type your answer here...">
-                    
-                    <div class="flex flex-wrap gap-2">
-                        <button onclick="checkTextAnswer()" class="flex-grow bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-6 rounded-xl shadow transition">Check Answer</button>
-                        <button onclick="startVoiceRecognition('quiz')" id="quiz-mic-btn" class="bg-teal-600 hover:bg-teal-700 text-white font-bold py-3 px-5 rounded-xl shadow transition" title="Answer using your voice">🎙️ Speak Answer</button>
-                    </div>
-
-                    <div class="flex justify-between items-center pt-2">
-                        <button onclick="revealHint()" class="text-sm font-semibold text-amber-600 hover:text-amber-700 bg-amber-50 px-3 py-1.5 rounded-lg transition">💡 Need a Hint?</button>
-                        <button onclick="nextQuiz()" class="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition">Skip Question ➡️</button>
-                    </div>
-                    
-                    <p id="quiz-hint-box" class="hidden text-xs bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-lg font-mono"></p>
-                    <p id="quiz-feedback" class="text-center font-bold text-lg h-6 transition-all duration-300"></p>
-                </div>
-            </div>
-        </div>
-
-    </main>
-
     <style>
-        .perspective-1000 { perspective: 1000px; }
-        .transform-style-3d { transform-style: preserve-3d; }
+        .flashcard { perspective: 1000px; }
+        .flashcard-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
         .backface-hidden { backface-visibility: hidden; }
         .rotate-y-180 { transform: rotateY(180deg); }
     </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen">
+
+    <header class="bg-teal-700 text-white shadow-md p-4 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-4">
+            <h1 class="text-2xl font-bold flex items-center gap-2">🩺 MedVocab Clinical Academy <span class="text-xs bg-teal-900 px-2 py-1 rounded">B1 Adult Learners</span></h1>
+            <div class="flex items-center gap-3 flex-wrap justify-center">
+                <button onclick="toggleGlossary()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 font-bold rounded shadow-sm text-sm text-slate-900 transition flex items-center gap-1">📖 <span id="toggle-text">Hide Glossary</span></button>
+                
+                <nav class="flex flex-wrap gap-2 justify-center">
+                    <button onclick="switchTab('cards')" id="tab-cards" class="px-3 py-1.5 bg-teal-800 font-semibold rounded shadow-sm text-sm text-white transition">📇 Flashcards</button>
+                    <button onclick="switchTab('voice')" id="tab-voice" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-800 font-semibold rounded shadow-sm text-sm text-white transition">🎙️ Voice Coach</button>
+                    <button onclick="switchTab('quiz')" id="tab-quiz" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-800 font-semibold rounded shadow-sm text-sm text-white transition">📝 Fill-in-Blanks</button>
+                    <button onclick="switchTab('multiple')" id="tab-multiple" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-800 font-semibold rounded shadow-sm text-sm text-white transition">🗂️ 4-Option Quiz</button>
+                    <button onclick="switchTab('spelling')" id="tab-spelling" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-800 font-semibold rounded shadow-sm text-sm text-white transition">🔤 Spelling Bee</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto p-4 flex flex-col lg:flex-row gap-6 items-start">
+        
+        <aside id="sidebar-glossary" class="w-full lg:w-4/12 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 h-[calc(100vh-120px)] overflow-y-auto sticky top-24 transition-all duration-300 block">
+            <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">📖 Terminology Glossary</h2>
+            <p class="text-xs text-slate-500 mb-4">Click any item below to quickly listen to its native audio pronunciation.</p>
+            <div id="glossary-list" class="space-y-2">
+                </div>
+        </aside>
+
+        <main id="main-content-area" class="w-full lg:w-8/12 bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col justify-center min-h-[500px] transition-all duration-300">
+            
+            <section id="view-cards" class="tab-view block">
+                <div class="text-center mb-6">
+                    <h2 class="text-2xl font-bold text-teal-900">Medical Flashcards</h2>
+                    <p class="text-slate-600 text-sm">Click the card to flip it over and view translations, usage details, or definitions.</p>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div id="flashcard-container" class="flashcard w-full max-w-md min-h-[380px] relative cursor-pointer mb-6" onclick="toggleFlip()">
+                        <div id="flashcard-inner" class="flashcard-inner w-full h-full relative duration-500">
+                            <div class="absolute inset-0 bg-white border border-slate-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-between backface-hidden gap-4">
+                                <span class="text-xs font-semibold tracking-wider text-slate-400 uppercase">Click to Flip 🔄</span>
+                                
+                                <div class="w-full flex items-center justify-center p-2 bg-slate-50 border border-slate-100 rounded-xl">
+                                    <img id="card-img" class="max-h-48 w-auto object-scale-down mx-auto rounded" src="" alt="Vocabulary Graphic">
+                                </div>
+                                
+                                <div class="text-center">
+                                    <h3 id="card-word" class="text-2xl font-bold text-slate-800 capitalize"></h3>
+                                    <p id="card-phonetic" class="text-teal-600 font-mono text-sm"></p>
+                                </div>
+                                <button onclick="playPronunciation(event)" class="px-3 py-1 bg-teal-100 text-teal-700 rounded-full font-bold text-xs hover:bg-teal-200 transition">🔊 Pronounce</button>
+                            </div>
+                            <div class="absolute inset-0 bg-teal-50 border border-teal-200 rounded-2xl shadow-md p-6 flex flex-col items-center justify-between backface-hidden rotate-y-180">
+                                <span class="text-xs font-semibold tracking-wider text-teal-600 uppercase">Meaning & Usage Context</span>
+                                <div class="text-center px-2 my-auto">
+                                    <p id="card-definition" class="text-sm font-semibold text-slate-700 mb-3"></p>
+                                    <blockquote id="card-example" class="italic bg-white p-2.5 rounded border-l-4 border-teal-500 text-slate-600 text-xs"></blockquote>
+                                </div>
+                                <span class="text-xs text-slate-400">Click anywhere to flip back</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex gap-4 items-center">
+                        <button onclick="prevCard()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-sm rounded-lg font-bold">⬅️ Prev</button>
+                        <span id="card-counter" class="text-sm font-medium text-slate-600"></span>
+                        <button onclick="nextCard()" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 text-sm rounded-lg font-bold">Next ➡️</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-voice" class="tab-view hidden">
+                <div class="text-center mb-4">
+                    <h2 class="text-2xl font-bold text-teal-900">Microphone Pronunciation Coach 🎙️</h2>
+                    <p class="text-slate-600 text-sm">Practice your speaking skills! Say the target medical word clearly into your microphone.</p>
+                </div>
+                <div class="max-w-md mx-auto text-center">
+                    <div class="w-full p-2 bg-slate-50 border border-slate-100 rounded-xl mb-3 flex items-center justify-center">
+                        <img id="voice-img" class="max-h-52 w-auto object-scale-down mx-auto rounded" src="" alt="Vocabulary Graphic">
+                    </div>
+                    <h3 id="voice-word" class="text-2xl font-bold text-slate-800 capitalize"></h3>
+                    <p id="voice-phonetic" class="text-teal-600 font-mono text-sm mb-3"></p>
+                    <button onclick="triggerVoiceAudio()" class="mb-4 px-3 py-1 bg-slate-100 hover:bg-slate-200 text-xs rounded-md font-medium">🔊 Listen to Example</button>
+                    <div class="p-3 bg-slate-50 rounded-xl mb-4 border border-dashed border-slate-300 min-h-20 flex flex-col items-center justify-center">
+                        <p id="voice-status" class="text-xs font-medium text-slate-400 mb-1">Ready for input...</p>
+                        <p id="voice-transcript" class="text-base font-bold text-teal-800 italic"></p>
+                        <p id="voice-feedback" class="text-lg font-extrabold mt-1"></p>
+                    </div>
+                    <div class="flex items-center justify-between border-t pt-4 border-slate-100">
+                        <button onclick="prevVoice()" class="px-3 py-1 bg-slate-200 text-xs font-bold rounded">Previous</button>
+                        <button id="mic-btn" onclick="startSpeechRecognition()" class="px-5 py-2 bg-red-500 text-white rounded-full text-sm font-bold shadow-md hover:bg-red-600 flex items-center gap-1">🔴 Tap & Speak</button>
+                        <button onclick="nextVoice()" class="px-3 py-1 bg-slate-200 text-xs font-bold rounded">Next</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-quiz" class="tab-view hidden">
+                <div class="text-center mb-4">
+                    <h2 class="text-2xl font-bold text-teal-900">Context Fill-in-the-Blanks</h2>
+                </div>
+                <div class="max-w-xl mx-auto">
+                    <div class="flex justify-between items-center text-xs text-slate-400 font-bold uppercase mb-3">
+                        <span id="quiz-counter"></span>
+                        <span id="quiz-score">Score: 0</span>
+                    </div>
+                    <div id="quiz-box">
+                        <div class="w-full p-2 bg-slate-50 border border-slate-100 rounded-xl mb-3 flex items-center justify-center">
+                            <img id="quiz-img" class="max-h-56 w-auto object-scale-down mx-auto rounded" src="" alt="Vocabulary Graphic">
+                        </div>
+                        <p id="quiz-sentence" class="text-base font-medium bg-slate-50 p-3 rounded-xl border-l-4 border-teal-600 mb-2"></p>
+                        
+                        <div id="quiz-feedback-banner" class="hidden w-full p-3 mb-3 rounded-lg text-sm font-semibold transition-all"></div>
+
+                        <div class="mb-4">
+                            <input type="text" id="quiz-input" autocomplete="off" class="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 text-base" placeholder="Type answer here...">
+                            <p id="quiz-hint" class="text-xs text-slate-400 mt-1 italic"></p>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <button onclick="requestRedo('quiz')" class="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-500 rounded hover:bg-red-50 hover:text-red-600">🔄 Reset</button>
+                            <button id="quiz-submit-btn" onclick="checkQuizAnswer()" class="px-5 py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg text-sm">Submit Answer 🚀</button>
+                        </div>
+                    </div>
+                    <div id="quiz-result-screen" class="hidden text-center py-6">
+                        <h3 class="text-xl font-bold mb-2">🎉 Section Finished!</h3>
+                        <p id="quiz-final-score-text" class="text-sm mb-4"></p>
+                        <button onclick="resetQuiz()" class="px-4 py-2 bg-teal-600 text-white rounded font-bold text-sm">Restart Quiz</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-multiple" class="tab-view hidden">
+                <div class="text-center mb-4">
+                    <h2 class="text-2xl font-bold text-teal-900">Multiple Choice Definition Check</h2>
+                </div>
+                <div class="max-w-xl mx-auto">
+                    <div class="flex justify-between items-center text-xs text-slate-400 font-bold uppercase mb-3">
+                        <span id="multi-counter">Question 1</span>
+                        <span id="multi-score">Score: 0</span>
+                    </div>
+                    <div id="multi-box">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-2">
+                            <span class="text-xs font-bold uppercase tracking-wider text-teal-600">Identify this definition:</span>
+                            <p id="multi-definition-text" class="text-base font-semibold text-slate-800 mt-1"></p>
+                        </div>
+
+                        <div id="multi-feedback-banner" class="hidden w-full p-3 mb-3 rounded-lg text-sm font-semibold text-center transition-all"></div>
+
+                        <div id="multi-options-grid" class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+                            </div>
+                        <button onclick="requestRedo('multi')" class="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-500 rounded hover:bg-red-50">🔄 Reset Activity</button>
+                    </div>
+                    <div id="multi-result-screen" class="hidden text-center py-6">
+                        <h3 class="text-xl font-bold mb-2">🎉 Section Finished!</h3>
+                        <p id="multi-final-text" class="text-sm mb-4"></p>
+                        <button onclick="resetMultipleChoice()" class="px-4 py-2 bg-teal-600 text-white rounded font-bold text-sm">Restart Activity</button>
+                    </div>
+                </div>
+            </section>
+
+            <section id="view-spelling" class="tab-view hidden">
+                <div class="text-center mb-4">
+                    <h2 class="text-2xl font-bold text-teal-900">Clinical Spelling Bee 🔤</h2>
+                </div>
+                <div class="max-w-xl mx-auto text-center">
+                    <div class="flex justify-between items-center text-xs text-slate-400 font-bold uppercase mb-4">
+                        <span id="spell-counter">Word 1</span>
+                        <span id="spell-score">Score: 0</span>
+                    </div>
+                    <div id="spell-box">
+                        <div class="bg-teal-50 border border-teal-100 p-6 rounded-2xl mb-4 flex flex-col items-center justify-center gap-2">
+                            <button onclick="playSpellingAudio()" class="w-16 h-16 bg-teal-600 text-white rounded-full flex items-center justify-center text-xl shadow-md hover:bg-teal-700 transition mx-auto">🔊</button>
+                            <p class="text-xs font-semibold text-teal-800 mt-1">Click to hear the term. Type what you hear!</p>
+                        </div>
+                        <p id="spell-meaning-hint" class="text-sm text-slate-600 italic mb-2 bg-slate-50 p-2 rounded border shadow-inner"></p>
+                        
+                        <div id="spell-feedback-banner" class="hidden w-full p-3 mb-3 rounded-lg text-sm font-semibold text-center transition-all"></div>
+
+                        <input type="text" id="spell-input" autocomplete="off" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg text-center tracking-widest uppercase text-lg font-mono focus:ring-2 focus:ring-teal-500 mb-4" placeholder="...">
+                        <div class="flex justify-between items-center">
+                            <button onclick="requestRedo('spell')" class="px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-500 rounded hover:bg-red-50">🔄 Reset</button>
+                            <button id="spell-submit-btn" onclick="checkSpellingAnswer()" class="px-6 py-2 bg-teal-600 text-white font-bold rounded-lg text-sm">Verify Spelling ✔️</button>
+                        </div>
+                    </div>
+                    <div id="spell-result-screen" class="hidden py-6">
+                        <h3 class="text-xl font-bold mb-2">🎉 Section Finished!</h3>
+                        <p id="spell-final-text" class="text-sm mb-4"></p>
+                        <button onclick="resetSpelling()" class="px-4 py-2 bg-teal-600 text-white rounded font-bold text-sm">Restart Activity</button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 animate-fade-in">
+        <div class="bg-white p-6 rounded-xl shadow-xl max-w-sm w-full mx-4 text-center">
+            <h3 class="text-xl font-bold mb-2">🤔 Are you sure?</h3>
+            <p class="text-slate-600 text-sm mb-6">This action will clear your records for this specific practice track.</p>
+            <div class="flex justify-center gap-3">
+                <button onclick="closeConfirmation(false)" class="px-4 py-1.5 bg-slate-200 hover:bg-slate-300 rounded text-sm font-semibold">Cancel</button>
+                <button onclick="closeConfirmation(true)" class="px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded text-sm font-semibold">Yes, Redo it!</button>
+            </div>
+        </div>
+    </div>
 
     <script>
-        // 1. Vocabulary Dataset Object Array
-        const vocabularyData = [
-            {
-                word: "accident",
-                phonetic: "/ˈæksɪdənt/",
-                meaning: "An unexpected and undesirable event, especially one resulting in damage or injury.",
-                example: "She broke her leg in a serious car accident yesterday.",
-                image: "https://bblawgroupllp.com/wp-content/uploads/2021/10/Top-Causes-Car-Accidents.jpg",
-                blankSentence: "She broke her leg in a serious car ___________ yesterday."
-            },
-            {
-                word: "ambulance",
-                phonetic: "/ˈæmbjələns/",
-                meaning: "A special vehicle equipped to take sick or injured people to a hospital.",
-                example: "The ambulance arrived within minutes to take the patient away.",
-                image: "https://static.vecteezy.com/system/resources/thumbnails/029/338/731/small/ambulance-car-illustration-emergency-medical-service-vehicle-isolated-on-white-background-vector.jpg",
-                blankSentence: "The ___________ arrived within minutes to take the patient away."
-            },
-            {
-                word: "aspirin",
-                phonetic: "/ˈæsprɪn/",
-                meaning: "A common drug used to reduce pain, fever, and inflammation.",
-                example: "I took an aspirin to help relieve my pounding headache.",
-                image: "https://i0.wp.com/post.medicalnewstoday.com/wp-content/uploads/sites/3/2020/09/GettyImages-1160681574_header-1024x575.jpg?w=1155&h=1528",
-                blankSentence: "I took an ___________ to help relieve my pounding headache."
-            },
-            {
-                word: "bandage",
-                phonetic: "/ˈbændɪdʒ/",
-                meaning: "A strip of fabric used to bind, cover, or protect an injured part of the body.",
-                example: "The nurse wrapped a clean bandage around his sprained wrist.",
-                image: "https://m.media-amazon.com/images/I/81Bc4Hgs6zL.jpg",
-                blankSentence: "The nurse wrapped a clean ___________ around his sprained wrist."
-            },
-            {
-                word: "bleed",
-                phonetic: "/bliːd/",
-                meaning: "To lose blood from the body, typically as a result of an injury.",
-                example: "Deep cuts will bleed heavily if you do not apply firm pressure.",
-                image: "https://cdn.mos.cms.futurecdn.net/r2bvNLMk8TVuNEKKhQb6Yf.jpg",
-                blankSentence: "Deep cuts will ___________ heavily if you do not apply firm pressure."
-            },
-            {
-                word: "blood pressure",
-                phonetic: "/blʌd ˈpreʃə/",
-                meaning: "The force or pressure of circulating blood on the walls of blood vessels.",
-                example: "The doctor checked my blood pressure to make sure my heart is healthy.",
-                image: "https://www.health.harvard.edu/heart-health/tips-to-measure-your-blood-pressure-correctly",
-                blankSentence: "The doctor checked my ___________  ___________ to make sure my heart is healthy."
-            },
-            {
-                word: "bone",
-                phonetic: "/bəʊn/",
-                meaning: "Any of the hard pieces making up the skeleton in humans and vertebrates.",
-                example: "The doctor looked at the X-ray to see if the bone was completely broken.",
-                image: "https://i0.wp.com/animalarchaeology.com/wp-content/uploads/2020/10/screenshot-1-4.png?ssl=1",
-                blankSentence: "The doctor looked at the X-ray to see if the ___________ was completely broken."
-            },
-            {
-                word: "bruise",
-                phonetic: "/bruːz/",
-                meaning: "An injury appearing as an area of discolored skin on the body, caused by a blow.",
-                example: "He had a dark blue bruise on his arm after hitting the door frame.",
-                image: "https://medlineplus.gov/images/Bruises_share.jpg",
-                blankSentence: "He had a dark blue ___________ on his arm after hitting the door frame."
-            },
-            {
-                word: "check-up",
-                phonetic: "/ˈtʃekʌp/",
-                meaning: "A general medical examination to ensure that you are healthy.",
-                example: "It is important to visit the clinic once a year for a routine check-up.",
-                image: "https://www.vrim.com.mx/wp-content/uploads/2023/01/check-up-2021-08-31-16-08-35-utc-1024x683.jpg",
-                blankSentence: "It is important to visit the clinic once a year for a routine ___________."
-            },
-            {
-                word: "clinic",
-                phonetic: "/ˈklɪnɪk/",
-                meaning: "An establishment or hospital department where outpatients are given medical treatment.",
-                example: "She went to the local clinic to get her flu vaccination.",
-                image: "https://aiht.edu/wp-content/uploads/2020/03/Clinics-Advantages-and-Disadvantages.png",
-                blankSentence: "She went to the local ___________ to get her flu vaccination."
-            },
-            {
-                word: "contagious",
-                phonetic: "/kənˈteɪdʒəs/",
-                meaning: "An illness spread from one person or organism to another by direct or indirect contact.",
-                example: "The chickenpox is highly contagious, so please stay home from school.",
-                image: "https://cmsv2-assets.apptegy.net/uploads/21468/file/3020274/01ddba6d-1c96-464e-af24-2ee01542ad76.png",
-                blankSentence: "The chickenpox is highly ___________, so please stay home from school."
-            },
-            {
-                word: "cough",
-                phonetic: "/kɒf/",
-                meaning: "To expel air from the lungs suddenly with a sharp and characteristic noise.",
-                example: "Drink this warm tea to calm your persistent cough.",
-                image: "https://www.breathefree.com/-/media/project/breathefree/images/breathing-conditons/persistent-cough/asset-2.svg",
-                blankSentence: "Drink this warm tea to calm your persistent ___________."
-            },
-            {
-                word: "doctor",
-                phonetic: "/ˈdɒktə/",
-                meaning: "A person who is qualified to treat people who are physically or mentally ill.",
-                example: "The doctor prescribed antibiotics for the patient's ear infection.",
-                image: "https://static.vecteezy.com/system/resources/thumbnails/026/375/249/small/ai-generative-portrait-of-confident-male-doctor-in-white-coat-and-stethoscope-standing-with-arms-crossed-and-looking-at-camera-photo.jpg",
-                blankSentence: "The ___________ prescribed antibiotics for the patient's ear infection."
-            },
-            {
-                word: "emergency",
-                phonetic: "/ɪˈmɜːdʒənsi/",
-                meaning: "A serious, unexpected, and often dangerous situation requiring immediate action.",
-                example: "Call 911 immediately if there is a medical emergency.",
-                image: "https://www.draeger.com/Media/Content/Content/supporting-care-with-technology-emergency-team-on-duty-4-3-d-18913-2010_.jpg",
-                blankSentence: "Call 911 immediately if there is a medical ___________."
-            },
-            {
-                word: "fever",
-                phonetic: "/ˈfiːvə/",
-                meaning: "An abnormally high body temperature, usually accompanied by shivering and headache.",
-                example: "The child has a high fever and feels very warm to the touch.",
-                image: "https://www.shutterstock.com/image-vector/sick-kids-has-fever-take-260nw-2350822633.jpg",
-                blankSentence: "The child has a high ___________ and feels very warm to the touch."
-            },
-            {
-                word: "flu",
-                phonetic: "/fluː/",
-                meaning: "An infectious respiratory disease caused by influenza viruses.",
-                example: "He felt achy and weak all over because he caught the seasonal flu.",
-                image: "https://www.cdc.gov/flu/images/homepage/symptoms2.png",
-                blankSentence: "He felt achy and weak all over because he caught the seasonal ___________."
-            },
-            {
-                word: "headache",
-                phonetic: "/ˈhedeɪk/",
-                meaning: "A continuous, painful ache inside your head.",
-                example: "Loud noises make my headache feel much worse.",
-                image: "https://mhnpc.com/wp-content/uploads/2025/11/headached-and-migraines_blog.jpeg",
-                blankSentence: "Loud noises make my ___________ feel much worse."
-            },
-            {
-                word: "heart attack",
-                phonetic: "/hɑːt əˈtæk/",
-                meaning: "A sudden, dangerous medical condition where blood flow to the heart muscle is blocked.",
-                example: "Chest pain can be an early sign of an incoming heart attack.",
-                image: "https://www.midgaheart.com/wp-content/uploads/2024/09/Featured-image-Man-clutching-his-chest-as-if-hes-having-a-heart-attack-1024x683.jpeg",
-                blankSentence: "Chest pain can be an early sign of an incoming ___________  ___________."
-            },
-            {
-                word: "illness",
-                phonetic: "/ˈɪlnəs/",
-                meaning: "A disease or period of sickness affecting the body or mind.",
-                example: "Wash your hands frequently to prevent the spread of serious illness.",
-                image: "https://blog.foodsafety.com.au/hs-fs/hubfs/Imported_Blog_Media/when-to-avoid-work-illness-injury-2.jpg?width=820&height=462&name=when-to-avoid-work-illness-injury-2.jpg",
-                blankSentence: "Wash your hands frequently to prevent the spread of serious ___________."
-            },
-            {
-                word: "infection",
-                phonetic: "/ɪnˈfekʃən/",
-                meaning: "The process of infecting or the state of being infected with a disease-causing agent.",
-                example: "Clean the wound thoroughly so you don't get an infection.",
-                image: "https://familyfirster.com/wp-content/uploads/2022/05/4-types-of-infection-1-1024x768.jpeg",
-                blankSentence: "Clean the wound thoroughly so you don't get an ___________."
-            },
-            {
-                word: "insomnia",
-                phonetic: "/ɪnˈsɒmnɪə/",
-                meaning: "Habitual or chronic sleeplessness; inability to fall asleep.",
-                example: "Her stressful work hours caused her to suffer from insomnia.",
-                image: "https://c.files.bbci.co.uk/2446/production/_104368290_insomnia976.jpg",
-                blankSentence: "Her stressful work hours caused her to suffer from ___________."
-            },
-            {
-                word: "insurance",
-                phonetic: "/ɪnˈʃʊərəns/",
-                meaning: "An arrangement by which a company guarantees compensation for specified medical loss or damage.",
-                example: "Does your health insurance policy cover dental check-ups too?",
-                image: "https://voca-land.sgp1.cdn.digitaloceanspaces.com/0/1757682010483/3132a1a7.jpg",
-                blankSentence: "Does your health ___________ policy cover dental check-ups too?"
-            },
-            {
-                word: "nurse",
-                phonetic: "/nɜːs/",
-                meaning: "A person trained to care for the sick or infirm, especially in a hospital setup.",
-                example: "The kind nurse checked my temperature and gave me some clean water.",
-                image: "https://www.shutterstock.com/image-vector/joyful-cartoon-illustration-blonde-female-600nw-2609946397.jpg",
-                blankSentence: "The kind ___________ checked my temperature and gave me some clean water."
-            },
-            {
-                word: "operation",
-                phonetic: "/ˌɒpəˈreɪʃən/",
-                meaning: "A surgical procedure to repair or restore a part of the body.",
-                example: "The surgeon performed a complex operation to fix her broken bone.",
-                image: "https://livhospital.b-cdn.net/wp-content/uploads/2025/10/27061239/doctors-in-operation-theatre.webp",
-                blankSentence: "The surgeon performed a complex ___________ to fix her broken bone."
-            },
-            {
-                word: "patient",
-                phonetic: "/ˈpeɪʃənt/",
-                meaning: "A person receiving or registered to receive medical care and attention.",
-                example: "The patient waited calmly in the waiting room for the doctor.",
-                image: "https://www.ache.org/-/media/ache/blog/blog_header_patient_flow_and_4_tips_for_improving_07262021.png",
-                blankSentence: "The ___________ waited calmly in the waiting room for the doctor."
-            },
-            {
-                word: "phobia",
-                phonetic: "/ˈfəʊbɪə/",
-                meaning: "An extreme or irrational fear of something specific.",
-                example: "Her intense phobia of needles makes medical blood tests very difficult.",
-                image: "https://cdn-prod.medicalnewstoday.com/content/images/articles/249/249347/phobia-face-woman.jpg",
-                blankSentence: "Her intense ___________ of needles makes medical blood tests very difficult."
-            },
-            {
-                word: "pill",
-                phonetic: "/pɪl/",
-                meaning: "A small round mass of solid medicine to be swallowed whole.",
-                example: "Take one vitamin pill every morning with breakfast.",
-                image: "https://play-lh.googleusercontent.com/E9pK02x6bbjB2Fioe-AEy0UzqX2pn1PrZlbdXEpacwlsLLIq80aJb5oEZF8DUjdz2XR6R1XwvvBT0PJMovPXmw",
-                blankSentence: "Take one vitamin ___________ every morning with breakfast."
-            },
-            {
-                word: "prescription",
-                phonetic: "/prɪˈskrɪpʃən/",
-                meaning: "An official piece of paper written by a doctor that lets you get medicine from a pharmacy.",
-                example: "The pharmacy prepared the medicine listed on the doctor's prescription.",
-                image: "https://www.statnews.com/wp-content/uploads/2021/02/AdobeStock_300785040.jpeg",
-                blankSentence: "The pharmacy prepared the medicine listed on the doctor's ___________."
-            },
-            {
-                word: "relax",
-                phonetic: "/rɪˈlæks/",
-                meaning: "To rest or take a break from work or tension to rebuild strength.",
-                example: "You need to relax completely and rest until your high fever drops.",
-                image: "https://www.womansworld.com/wp-content/uploads/2021/04/Relax.jpg?quality=86&strip=all",
-                blankSentence: "You need to ___________ completely and rest until your high fever drops."
-            },
-            {
-                word: "runny nose",
-                phonetic: "/ˈrʌni nəʊz/",
-                meaning: "A condition where excess mucus flows out of the nose constantly.",
-                example: "I need some tissues because my allergies give me a bad runny nose.",
-                image: "https://violapharm.com/wp-content/uploads/2026/01/runny-nose.jpg",
-                blankSentence: "I need some tissues because my allergies give me a bad ___________  ___________."
-            },
-            {
-                word: "sneeze",
-                phonetic: "/sniːz/",
-                meaning: "To make a sudden involuntary expulsion of air from the nose and mouth.",
-                example: "The dust on the old bookshelf made me sneeze loudly three times.",
-                image: "https://www.entandallergy.com/images/blog/BLOGSNEWS-PRESS-WEBSITE-THUMBNAIL.21).png",
-                blankSentence: "The dust on the old bookshelf made me ___________ loudly three times."
-            },
-            {
-                word: "sore",
-                phonetic: "/sɔː/",
-                meaning: "A raw, painful, or tender spot on the body caused by infection or muscle strain.",
-                example: "My throat feels very dry and sore after talking all day long.",
-                image: "https://aestheticfamilydentalcenter.com/wp-content/uploads/2025/03/canker-sore-2025_620.jpg",
-                blankSentence: "My throat feels very dry and ___________ after talking all day long."
-            },
-            {
-                word: "sprain",
-                phonetic: "/spreɪn/",
-                meaning: "Wrench or twist the ligaments of an ankle, wrist, or joint violently causing pain.",
-                example: "Be careful not to trip and sprain your ankle on these uneven steps.",
-                image: "https://sa1s3optim.patientpop.com/assets/docs/308510.jpg",
-                blankSentence: "Be careful not to trip and ___________ your ankle on these uneven steps."
-            },
-            {
-                word: "stitches",
-                phonetic: "/ˈstɪtʃɪz/",
-                meaning: "A loop of thread or wire used to sew up and close the edges of a deep wound.",
-                example: "The cut on his knee was deep and required five medical stitches.",
-                image: "https://www.visitcompletecare.com/wp-content/uploads/2016/05/shutterstock_127350257-1-1536x1041.webp",
-                blankSentence: "The cut on his knee was deep and required five medical ___________."
-            },
-            {
-                word: "stomachache",
-                phonetic: "/ˈstʌmək-eɪk/",
-                meaning: "A sharp or dull pain in a person's belly or stomach region.",
-                example: "Eating too much spicy food gave him an uncomfortable stomachache.",
-                image: "https://www.gasofast.com/media/images/blogpost/image/different-types-of-stomach-ache-1672810383.jpg",
-                blankSentence: "Eating too much spicy food gave him an uncomfortable ___________."
-            },
-            {
-                word: "stress",
-                phonetic: "/stres/",
-                meaning: "A state of mental or emotional strain resulting from adverse or demanding circumstances.",
-                example: "Exercise and deep breathing are great ways to manage daily life stress.",
-                image: "https://thehappinesscenter.ng/wp-content/uploads/2022/08/stressed-woman-at-work.jpeg",
-                blankSentence: "Exercise and deep breathing are great ways to manage daily life ___________."
-            },
-            {
-                word: "vitamin",
-                phonetic: "/ˈvɪtəmɪn/",
-                meaning: "Organic compounds essential for normal growth and nutrition, taken through food or pills.",
-                example: "Oranges are filled with Vitamin C which keeps your body strong.",
-                image: "https://dam.northwell.edu/asset/6b7fab7d-3533-4f96-86de-245560fa05e7/Drupal/TheWell_vitamin-cheat-sheet-foods_GettyImages-921950686.jpg",
-                blankSentence: "Oranges are filled with ___________ C which keeps your body strong."
-            }
+        const rawVocabulary = [
+            { word: "accident", ipa: "/ˈæk.sɪ.dənt/", meaning: "An unpleasant event that happens unexpectedly and causes damage or injury.", example: "She spent two days in the hospital after a serious car accident.", img: "https://bblawgroupllp.com/wp-content/uploads/2021/10/Top-Causes-Car-Accidents.jpg", sentence: "She spent two days in the hospital after a serious car _________." },
+            { word: "ambulance", ipa: "/ˈæm.bjə.ləns/", meaning: "A special vehicle equipped to carry sick or injured people to a hospital.", example: "Call an ambulance quickly! The man collapsed on the street.", img: "https://static.vecteezy.com/system/resources/thumbnails/029/338/731/small/ambulance-car-illustration-emergency-medical-service-vehicle-isolated-on-white-background-vector.jpg", sentence: "Call an _________ quickly! The man collapsed on the street." },
+            { word: "aspirin", ipa: "/ˈæs.prɪn/", meaning: "A common medication used to reduce pain, fever, or inflammation.", example: "I took an aspirin to help relieve my pounding headache.", img: "https://i0.wp.com/post.medicalnewstoday.com/wp-content/uploads/sites/3/2020/09/GettyImages-1160681574_header-1024x575.jpg?w=1155&h=1528", sentence: "I took an _________ to help relieve my pounding headache." },
+            { word: "bandage", ipa: "/ˈbæn.dɪdʒ/", meaning: "A strip of fabric material used to protect or bind a wound or injury.", example: "The nurse wrapped a clean bandage tightly around his cut finger.", img: "https://m.media-amazon.com/images/I/81Bc4Hgs6zL.jpg", sentence: "The nurse wrapped a clean _________ tightly around his cut finger." },
+            { word: "bleed", ipa: "/bliːd/", meaning: "To lose blood from the body, typically from a cut or wound.", example: "Deep cuts will bleed heavily if you do not apply immediate pressure.", img: "https://cdn.mos.cms.futurecdn.net/r2bvNLMk8TVuNEKKhQb6Yf.jpg", sentence: "Deep cuts will _________ heavily if you do not apply immediate pressure." },
+            { word: "bone", ipa: "/boʊn/", meaning: "Any of the hard pieces making up the skeletal framework of a body.", example: "He fell off the bicycle and broke a bone in his left arm.", img: "https://i0.wp.com/animalarchaeology.com/wp-content/uploads/2020/10/screenshot-1-4.png?ssl=1", sentence: "He fell off the bicycle and broke a _________ in his left arm." },
+            { word: "bruise", ipa: "/bruːz/", meaning: "An injury appearing as an area of discolored skin on the body.", example: "A dark purple bruise formed where the heavy ball hit his leg.", img: "https://medlineplus.gov/images/Bruises_share.jpg", sentence: "A dark purple _________ formed where the heavy ball hit his leg." },
+            { word: "check-up", ipa: "/ˈtʃek.ʌp/", meaning: "A thorough medical or physical examination to ensure good health.", example: "It is sensible to visit your family doctor once a year for a routine check-up.", img: "https://www.vrim.com.mx/wp-content/uploads/2023/01/check-up-2021-08-31-16-08-35-utc-1024x683.jpg", sentence: "It is sensible to visit your family doctor once a year for a routine _________." },
+            { word: "contagious", ipa: "/kənˈteɪ.dʒəs/", meaning: "A disease spread from one person or organism to another by direct contact.", example: "Flu is highly contagious, so keep distance if someone is coughing.", img: "https://cmsv2-assets.apptegy.net/uploads/21468/file/3020274/01ddba6d-1c96-464e-af24-2ee01542ad76.png", sentence: "Flu is highly _________, so keep distance if someone is coughing." },
+            { word: "cough", ipa: "/kɔːf/", meaning: "To expel air from the lungs suddenly with a sharp and loud noise.", example: "Please cover your mouth when you cough to avoid spreading germs.", img: "https://www.breathefree.com/-/media/project/breathefree/images/breathing-conditons/persistent-cough/asset-2.svg", sentence: "Please cover your mouth when you _________ to avoid spreading germs." },
+            { word: "doctor", ipa: "/ˈdɑːk.tər/", meaning: "A qualified person licensed to practice medicine and heal patients.", example: "The doctor carefully examined my chart before prescribing pills.", img: "https://static.vecteezy.com/system/resources/thumbnails/026/375/249/small/ai-generative-portrait-of-confident-male-doctor-in-white-coat-and-stethoscope-standing-with-arms-crossed-and-looking-at-camera-photo.jpg", sentence: "The _________ carefully examined my chart before prescribing pills." },
+            { word: "emergency", ipa: "/ɪˈmɜːr.dʒən.si/", meaning: "A serious, unexpected situation requiring immediate life-saving action.", example: "The hospital's emergency room was packed with ambulances tonight.", img: "https://www.draeger.com/Media/Content/Content/supporting-care-with-technology-emergency-team-on-duty-4-3-d-18913-2010_.jpg", sentence: "The hospital's _________ room was packed with ambulances tonight." },
+            { word: "fever", ipa: "/ˈfiː.vər/", meaning: "An abnormally high body temperature, usually accompanied by sickness.", example: "A cold compress helped bring down her burning fever.", img: "https://www.shutterstock.com/image-vector/sick-kids-has-fever-take-260nw-2350822633.jpg", sentence: "A cold compress helped bring down her burning _________." },
+            { word: "flu", ipa: "/fluː/", meaning: "An infectious respiratory virus causing muscle aches, fever, and chills.", example: "The doctor advised lots of bed rest to recover from the seasonal flu.", img: "https://www.cdc.gov/flu/images/homepage/symptoms2.png", sentence: "The doctor advised lots of bed rest to recover from the seasonal _________." },
+            { word: "headache", ipa: "/ˈhed.eɪk/", meaning: "A continuous, intense pain located inside the skull or head area.", example: "Staring at the computer monitor all afternoon gave me a terrible headache.", img: "https://mhnpc.com/wp-content/uploads/2025/11/headached-and-migraines_blog.jpeg", sentence: "Staring at the computer monitor all afternoon gave me a terrible _________." },
+            { word: "heart attack", ipa: "/ˈhɑːrt əˌtæk/", meaning: "A medical emergency where blood flow blocks to the heart muscle.", example: "The elderly man survived a sudden heart attack thanks to quick chest compressions.", img: "https://www.midgaheart.com/wp-content/uploads/2024/09/Featured-image-Man-clutching-his-chest-as-if-hes-having-a-heart-attack-1024x683.jpeg", sentence: "The elderly man survived a sudden _________ thanks to quick chest compressions." },
+            { word: "illness", ipa: "/ˈɪl.nəs/", meaning: "A disease or period of sickness affecting the physical body or mind.", example: "He missed an entire week of work because of an unexpected chronic illness.", img: "https://blog.foodsafety.com.au/hs-fs/hubfs/Imported_Blog_Media/when-to-avoid-work-illness-injury-2.jpg?width=820&height=462&name=when-to-avoid-work-illness-injury-2.jpg", sentence: "He missed an entire week of work because of an unexpected chronic _________." },
+            { word: "infection", ipa: "/ɪnˈfek.ʃən/", meaning: "The invasion of body tissues by disease-causing organisms or bacteria.", example: "Apply antibiotic ointment to the scrape to safely prevent any infection.", img: "https://familyfirster.com/wp-content/uploads/2022/05/4-types-of-infection-1-1024x768.jpeg", sentence: "Apply antibiotic ointment to the scrape to safely prevent any _________." },
+            { word: "insomnia", ipa: "/ɪnˈsɑːm.ni.ə/", meaning: "Habitual or chronic sleeplessness; the complete inability to fall asleep.", example: "Her stress at work triggered severe insomnia, keeping her awake till dawn.", img: "https://c.files.bbci.co.uk/2446/production/_104368290_insomnia976.jpg", sentence: "Her stress at work triggered severe _________, keeping her awake till dawn." },
+            { word: "insurance", ipa: "/ɪnˈʃɜːr.əns/", meaning: "Arrangement by which a company provides a guarantee of compensation for medical expenses.", example: "Does your health insurance cover the full cost of surgical procedures?", img: "https://voca-land.sgp1.cdn.digitaloceanspaces.com/0/1757682010483/3132a1a7.jpg", sentence: "Does your health _________ cover the full cost of surgical procedures?" },
+            { word: "nurse", ipa: "/nɜːrs/", meaning: "A person trained to care for the sick or infirm, assisting doctors.", example: "The kind nurse checked my blood pressure and gave me water.", img: "https://www.shutterstock.com/image-vector/joyful-cartoon-illustration-blonde-female-600nw-2609946397.jpg", sentence: "The kind _________ checked my blood pressure and gave me water." },
+            { word: "operation", ipa: "/ˌɑː.pəˈreɪ.ʃən/", meaning: "A surgical procedure performed on a patient to mend damage.", example: "The surgeon performed a delicate bypass operation on the heart.", img: "https://livhospital.b-cdn.net/wp-content/uploads/2025/10/27061239/doctors-in-operation-theatre.webp", sentence: "The surgeon performed a delicate bypass _________ on the heart." },
+            { word: "patient", ipa: "/ˈpeɪ.ʃənt/", meaning: "A person receiving or registered to receive professional medical care.", example: "The doctor asked the patient to sit down and describe their symptoms.", img: "https://www.ache.org/-/media/ache/blog/blog_header_patient_flow_and_4_tips_for_improving_07262021.png", sentence: "The doctor asked the _________ to sit down and describe their symptoms." },
+            { word: "phobia", ipa: "/ˈfoʊ.bi.ə/", meaning: "An extreme, irrational, or paralyzing fear of something specific.", example: "Her extreme phobia of needles makes getting simple blood tests difficult.", img: "https://cdn-prod.medicalnewstoday.com/content/images/articles/249/249347/phobia-face-woman.jpg", sentence: "Her extreme _________ of needles makes getting simple blood tests difficult." },
+            { word: "pill", ipa: "/pɪl/", meaning: "A small round or oval mass of solid medicine to be swallowed whole.", example: "Take one vitamin pill every morning after completing your breakfast.", img: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?q=80&w=600&auto=format&fit=crop", sentence: "Take one vitamin _________ every morning after completing your breakfast." },
+            { word: "prescription", ipa: "/prɪˈskrɪp.ʃən/", meaning: "An official instruction written by a physician that authorizes a patient to buy medicine.", example: "The local pharmacist filled my prescription for antibiotics instantly.", img: "https://www.statnews.com/wp-content/uploads/2021/02/AdobeStock_300785040.jpeg", sentence: "The local pharmacist filled my _________ for antibiotics instantly." },
+            { word: "relax", ipa: "/rɪˈlæks/", meaning: "To rest from work or stress, allowing muscles and mind to loosen.", example: "Listening to soft classical music helps my tense body relax completely.", img: "https://www.womansworld.com/wp-content/uploads/2021/04/Relax.jpg?quality=86&strip=all", sentence: "Listening to soft classical music helps my tense body _________ completely." },
+            { word: "sneeze", ipa: "/sniːz/", meaning: "To make a sudden involuntary expulsion of air from the nose and mouth.", example: "Bright sunlight can occasionally cause certain people to sneeze out loud.", img: "https://www.entandallergy.com/images/blog/BLOGSNEWS-PRESS-WEBSITE-THUMBNAIL.21).png", sentence: "Bright sunlight can occasionally cause certain people to _________ out loud." },
+            { word: "sore", ipa: "/sɔːr/", meaning: "An area of skin or muscle that is raw, painful, or tender to touch.", example: "My throat feels scratchy and sore from shouting at the football match.", img: "https://aestheticfamilydentalcenter.com/wp-content/uploads/2025/03/canker-sore-2025_620.jpg", sentence: "My throat feels scratchy and _________ from shouting at the football match." },
+            { word: "sprain", ipa: "/spreɪn/", meaning: "To twist the ligaments of a joint violently, causing severe swelling.", example: "Be careful not to trip over that wire or you might sprain your ankle.", img: "https://sa1s3optim.patientpop.com/assets/docs/308510.jpg", sentence: "Be careful not to trip over that wire or you might _________ your ankle." },
+            { word: "stitches", ipa: "/ˈstɪtʃ·əz/", meaning: "Loops of thread sewn by surgeons to close up deep gashes and wounds.", example: "The deep cut on his arm required ten tiny stitches at the clinic.", img: "https://www.visitcompletecare.com/wp-content/uploads/2016/05/shutterstock_127350257-1-1536x1041.webp", sentence: "The deep cut on his arm required ten tiny _________ at the clinic." },
+            { word: "stomachache", ipa: "/ˈstʌm.ək.eɪk/", meaning: "A sharp or dull ache occurring anywhere in the belly region.", example: "Eating too much greasy fast food gave him a terrible stomachache.", img: "https://www.gasofast.com/media/images/blogpost/image/different-types-of-stomach-ache-1672810383.jpg", sentence: "Eating too much greasy fast food gave him a terrible _________." },
+            { word: "stress", ipa: "/stres/", meaning: "A state of mental or emotional strain resulting from demanding circumstances.", example: "High amounts of emotional stress can trigger elevated blood pressure levels.", img: "https://thehappinesscenter.ng/wp-content/uploads/2022/08/stressed-woman-at-work.jpeg", sentence: "High amounts of emotional _________ can trigger elevated blood pressure levels." },
+            { word: "vitamin", ipa: "/ˈvaɪ.t̬ə.mɪn/", meaning: "Organic components vital in small amounts to maintain active health.", example: "Oranges contain high amounts of vitamin C to boost immunity.", img: "https://dam.northwell.edu/asset/6b7fab7d-3533-4f96-86de-245560fa05e7/Drupal/TheWell_vitamin-cheat-sheet-foods_GettyImages-921950686.jpg", sentence: "Oranges contain high amounts of _________ C to boost immunity." }
         ];
 
-        // App States
-        let currentCardIndex = 0;
-        let currentQuizIndex = 0;
-        let audioCtx = null;
-
-        // Web Audio Sound Generator (No external files needed)
-        function initAudio() {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // Helper function to dynamically shuffle arrays
+        function shuffleArray(arr) {
+            let shuffled = [...arr];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
         }
 
+        // Generate shuffled independent tracks for randomized activities
+        let vocabulary = shuffleArray(rawVocabulary);
+        let quizTrack = shuffleArray(rawVocabulary);
+        let multiTrack = shuffleArray(rawVocabulary);
+        let spellTrack = shuffleArray(rawVocabulary);
+
+        // State variables
+        let currentCardIndex = 0;
+        let currentVoiceIndex = 0;
+        let currentQuizIndex = 0;
+        let quizScore = 0;
+        let currentMultiIndex = 0;
+        let multiScore = 0;
+        let currentSpellIndex = 0;
+        let spellScore = 0;
+        let activeTab = 'cards';
+        let pendingActionTarget = null;
+        let isGlossaryHidden = false;
+
+        // Native Audio Synthesis 
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
-            initAudio();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-
-            if (type === 'correct') {
-                // Happy celebration chirp
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(523.25, audioCtx.currentTime); // C5
-                osc.frequency.setValueAtTime(659.25, audioCtx.currentTime + 0.1); // E5
-                osc.frequency.setValueAtTime(783.99, audioCtx.currentTime + 0.2); // G5
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.4);
-            } else if (type === 'wrong') {
-                // Sad error buzz
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-                osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
-                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.3);
-            }
-        }
-
-        // View Mode Toggler
-        function switchMode(mode) {
-            const cardsView = document.getElementById('cards-view');
-            const quizView = document.getElementById('quiz-view');
-            const navCards = document.getElementById('nav-cards');
-            const navQuiz = document.getElementById('nav-quiz');
-
-            if (mode === 'cards') {
-                cardsView.classList.remove('hidden');
-                quizView.classList.add('hidden');
-                navCards.className = "px-4 py-2 rounded-lg bg-teal-700 text-white font-semibold shadow transition";
-                navQuiz.className = "px-4 py-2 rounded-lg hover:bg-teal-500 font-semibold text-white transition";
-                renderCard();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            if (type === 'success') {
+                osc.frequency.setValueAtTime(523, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(784, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
             } else {
-                cardsView.classList.add('hidden');
-                quizView.classList.remove('hidden');
-                navCards.className = "px-4 py-2 rounded-lg hover:bg-teal-500 font-semibold text-white transition";
-                navQuiz.className = "px-4 py-2 rounded-lg bg-teal-700 text-white font-semibold shadow transition";
-                renderQuiz();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
             }
         }
 
-        // Flashcard Interactions
-        function renderCard() {
-            const item = vocabularyData[currentCardIndex];
-            const card = document.getElementById('flashcard');
-            
-            // Reset flipping
-            card.classList.remove('rotate-y-180');
-            
-            document.getElementById('card-img').src = item.image;
-            document.getElementById('card-word').innerText = item.word;
-            document.getElementById('card-phonetic').innerText = item.phonetic;
-            document.getElementById('card-meaning').innerText = item.meaning;
-            document.getElementById('card-example').innerText = item.example;
-            document.getElementById('card-index').innerText = `${currentCardIndex + 1} / ${vocabularyData.length}`;
-            document.getElementById('card-feedback').innerText = "";
-        }
-
-        function flipCard() {
-            document.getElementById('flashcard').classList.toggle('rotate-y-180');
-        }
-
-        function nextItem() {
-            currentCardIndex = (currentCardIndex + 1) % vocabularyData.length;
-            renderCard();
-        }
-
-        function prevItem() {
-            currentCardIndex = (currentCardIndex - 1 + vocabularyData.length) % vocabularyData.length;
-            renderCard();
-        }
-
-        function listenPronunciation() {
-            const word = vocabularyData[currentCardIndex].word;
-            const utterance = new SpeechSynthesisUtterance(word);
+        function playWordAudio(wordStr) {
+            const utterance = new SpeechSynthesisUtterance(wordStr);
             utterance.lang = 'en-US';
-            utterance.rate = 0.85; 
+            utterance.rate = 0.85;
             window.speechSynthesis.speak(utterance);
         }
 
-        // Quiz Mechanics
-        function renderQuiz() {
-            const item = vocabularyData[currentQuizIndex];
-            document.getElementById('quiz-img').src = item.image;
-            document.getElementById('quiz-sentence').innerText = item.blankSentence;
-            document.getElementById('quiz-input').value = "";
-            document.getElementById('quiz-feedback').innerText = "";
-            document.getElementById('quiz-hint-box').classList.add('hidden');
-        }
+        // Toggle Glossary Display
+        function toggleGlossary() {
+            const sidebar = document.getElementById('sidebar-glossary');
+            const mainContent = document.getElementById('main-content-area');
+            const toggleText = document.getElementById('toggle-text');
 
-        function revealHint() {
-            const item = vocabularyData[currentQuizIndex];
-            const hintBox = document.getElementById('quiz-hint-box');
-            hintBox.innerText = `💡 Definition hint: ${item.meaning}`;
-            hintBox.classList.remove('hidden');
-        }
+            isGlossaryHidden = !isGlossaryHidden;
 
-        function checkTextAnswer() {
-            const inputVal = document.getElementById('quiz-input').value.trim().toLowerCase();
-            const correctVal = vocabularyData[currentQuizIndex].word.toLowerCase();
-            const feedback = document.getElementById('quiz-feedback');
-
-            if (inputVal === correctVal) {
-                feedback.innerText = "🎉 Excellent! Correct answer!";
-                feedback.className = "text-center font-bold text-lg h-6 text-emerald-600";
-                triggerConfettiFromElement('quiz-confetti-origin');
-                playSound('correct');
+            if (isGlossaryHidden) {
+                sidebar.classList.replace('block', 'hidden');
+                mainContent.classList.replace('lg:w-8/12', 'lg:w-12/12');
+                toggleText.innerText = "Show Glossary";
             } else {
-                feedback.innerText = "❌ Oops! Try checking your spelling.";
-                feedback.className = "text-center font-bold text-lg h-6 text-rose-500";
-                playSound('wrong');
+                sidebar.classList.replace('hidden', 'block');
+                mainContent.classList.replace('lg:w-12/12', 'lg:w-8/12');
+                toggleText.innerText = "Hide Glossary";
             }
         }
 
-        function nextQuiz() {
-            currentQuizIndex = (currentQuizIndex + 1) % vocabularyData.length;
-            renderQuiz();
-        }
-
-        // Targeted Confetti Shooter
-        function triggerConfettiFromElement(elementId) {
-            const el = document.getElementById(elementId);
-            if(!el) return;
-            const rect = el.getBoundingClientRect();
-            
-            confetti({
-                particleCount: 100,
-                spread: 70,
-                origin: { 
-                    x: (rect.left + rect.width / 2) / window.innerWidth, 
-                    y: (rect.top + rect.height / 2) / window.innerHeight 
-                }
+        // Side-Panel Reference Rendering
+        function buildGlossary() {
+            const list = document.getElementById('glossary-list');
+            list.innerHTML = "";
+            // Keep glossary alphabetical for clean reference
+            const alphabeticalList = [...rawVocabulary].sort((a,b) => a.word.localeCompare(b.word));
+            alphabeticalList.forEach(item => {
+                const row = document.createElement('div');
+                row.className = "flex items-center justify-between p-2 hover:bg-slate-50 border-b border-slate-100 rounded-lg text-sm transition cursor-pointer";
+                row.onclick = () => playWordAudio(item.word);
+                row.innerHTML = `
+                    <div>
+                        <span class="font-bold text-slate-800 capitalize">${item.word}</span>
+                        <span class="text-xs font-mono text-teal-600 block">${item.ipa}</span>
+                    </div>
+                    <button class="text-slate-400 hover:text-teal-600">🔊</button>
+                `;
+                list.appendChild(row);
             });
         }
 
-        // 3. Web Speech Recognition System (Microphone Feedback Integration)
-        function startVoiceRecognition(mode) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert("Your browser doesn't support speech recognition feature yet. Please try on Google Chrome.");
-                return;
-            }
+        // Navigation Engine
+        function switchTab(tabId) {
+            activeTab = tabId;
+            document.querySelectorAll('.tab-view').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
 
-            const recognition = new SpeechRecognition();
-            recognition.lang = 'en-US';
-            recognition.interimResults = false;
-            recognition.maxAlternatives = 1;
-
-            const micBtn = document.getElementById(mode === 'card' ? 'card-mic-btn' : 'quiz-mic-btn');
-            const originalText = micBtn.innerText;
-            micBtn.innerText = "🎙️ Listening...";
-            micBtn.classList.add('animate-pulse', 'bg-amber-500');
-
-            recognition.start();
-
-            recognition.onresult = function(event) {
-                const speechResult = event.results[0][0].transcript.trim().toLowerCase();
-                const targetWord = vocabularyData[mode === 'card' ? currentCardIndex : currentQuizIndex].word.toLowerCase();
-                
-                if (mode === 'card') {
-                    const fb = document.getElementById('card-feedback');
-                    if (speechResult === targetWord) {
-                        fb.innerText = `🎯 Perfect! You said: "${speechResult}"`;
-                        fb.className = "text-sm font-semibold h-5 mt-2 text-emerald-600 text-center";
-                        playSound('correct');
-                        confetti({ particleCount: 40, spread: 50 });
-                    } else {
-                        fb.innerText = `Try again! Heard: "${speechResult}"`;
-                        fb.className = "text-sm font-semibold h-5 mt-2 text-amber-600 text-center";
-                        playSound('wrong');
-                    }
+            ['cards', 'voice', 'quiz', 'multiple', 'spelling'].forEach(id => {
+                const btn = document.getElementById(`tab-${id}`);
+                if (id === tabId) {
+                    btn.className = "px-3 py-1.5 bg-teal-800 font-semibold rounded shadow-sm text-sm text-white transition";
                 } else {
-                    // Inject spoken data into quiz field and instantly grade
-                    document.getElementById('quiz-input').value = speechResult;
-                    checkTextAnswer();
+                    btn.className = "px-3 py-1.5 bg-teal-600 hover:bg-teal-700 font-semibold rounded shadow-sm text-sm text-white transition";
                 }
-            };
+            });
 
-            recognition.onspeechend = function() {
-                recognition.stop();
-            };
-
-            recognition.onend = function() {
-                micBtn.innerText = originalText;
-                micBtn.classList.remove('animate-pulse', 'bg-amber-500');
-            };
-
-            recognition.onerror = function(event) {
-                console.error("Speech Recognition Error:", event.error);
-                micBtn.innerText = originalText;
-                micBtn.classList.remove('animate-pulse', 'bg-amber-500');
-            };
+            if (tabId === 'cards') renderFlashcard();
+            if (tabId === 'voice') renderVoicePractice();
+            if (tabId === 'quiz') renderQuizQuestion();
+            if (tabId === 'multiple') renderMultipleChoiceQuestion();
+            if (tabId === 'spelling') renderSpellingQuestion();
         }
 
-        // Initialize App UI
-        window.onload = () => {
-            renderCard();
+        // --- FLASHCARDS ENGINE ---
+        function renderFlashcard() {
+            document.getElementById('flashcard-container').classList.remove('flipped');
+            const data = vocabulary[currentCardIndex];
+            document.getElementById('card-img').src = data.img;
+            document.getElementById('card-word').innerText = data.word;
+            document.getElementById('card-phonetic').innerText = data.ipa;
+            document.getElementById('card-definition').innerText = data.meaning;
+            document.getElementById('card-example').innerText = `"${data.example}"`;
+            document.getElementById('card-counter').innerText = `${currentCardIndex + 1} / ${vocabulary.length}`;
+        }
+        function toggleFlip() { document.getElementById('flashcard-container').classList.toggle('flipped'); }
+        function nextCard() { currentCardIndex = (currentCardIndex + 1) % vocabulary.length; renderFlashcard(); }
+        function prevCard() { currentCardIndex = (currentCardIndex - 1 + vocabulary.length) % vocabulary.length; renderFlashcard(); }
+        function playPronunciation(e) { if(e) e.stopPropagation(); playWordAudio(vocabulary[currentCardIndex].word); }
+
+        // --- MICROPHONE VOICE COACH ---
+        function renderVoicePractice() {
+            const data = vocabulary[currentVoiceIndex];
+            document.getElementById('voice-img').src = data.img;
+            document.getElementById('voice-word').innerText = data.word;
+            document.getElementById('voice-phonetic').innerText = data.ipa;
+            document.getElementById('voice-status').innerText = "Tap the voice mic button and pronounce the word aloud.";
+            document.getElementById('voice-transcript').innerText = "";
+            document.getElementById('voice-feedback').innerText = "";
+        }
+        function triggerVoiceAudio() { playWordAudio(vocabulary[currentVoiceIndex].word); }
+        function startSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) { alert("Speech matching framework is unavailable here."); return; }
+            const rec = new SpeechRecognition(); rec.lang = 'en-US';
+            const btn = document.getElementById('mic-btn');
+            btn.innerText = "🎙️ Listening..."; btn.style.backgroundColor = "#d97706";
+            rec.start();
+            rec.onresult = function(e) {
+                const res = e.results[0][0].transcript.toLowerCase().trim();
+                const target = vocabulary[currentVoiceIndex].word.toLowerCase();
+                document.getElementById('voice-transcript').innerText = `Heard: "${res}"`;
+                if(res.includes(target) || target.includes(res)) {
+                    document.getElementById('voice-feedback').className = "text-lg font-extrabold text-green-600 mt-1";
+                    document.getElementById('voice-feedback').innerText = "🎯 Spot On! Great pronunciation!";
+                    playSound('success'); confetti({ particleCount: 40, spread: 50 });
+                } else {
+                    document.getElementById('voice-feedback').className = "text-lg font-extrabold text-red-500 mt-1";
+                    document.getElementById('voice-feedback').innerText = "❌ Keep training!"; playSound('fail');
+                }
+            };
+            rec.onspeechend = function() { rec.stop(); btn.innerText = "🔴 Tap & Speak"; btn.style.backgroundColor = "#ef4444"; };
+        }
+        function nextVoice() { currentVoiceIndex = (currentVoiceIndex + 1) % vocabulary.length; renderVoicePractice(); }
+        function prevVoice() { currentVoiceIndex = (currentVoiceIndex - 1 + vocabulary.length) % vocabulary.length; renderVoicePractice(); }
+
+        // ---  FILL IN BLANKS ---
+        function renderQuizQuestion() {
+            const banner = document.getElementById('quiz-feedback-banner');
+            banner.classList.add('hidden'); // Hide feedback banner on new question load
+            
+            if (currentQuizIndex >= quizTrack.length) {
+                document.getElementById('quiz-box').classList.add('hidden');
+                document.getElementById('quiz-result-screen').classList.remove('hidden');
+                document.getElementById('quiz-final-score-text').innerText = `Finished! Score: ${quizScore}/${quizTrack.length}`;
+                return;
+            }
+            document.getElementById('quiz-box').classList.remove('hidden');
+            document.getElementById('quiz-result-screen').classList.add('hidden');
+            const data = quizTrack[currentQuizIndex];
+            document.getElementById('quiz-img').src = data.img;
+            document.getElementById('quiz-sentence').innerText = data.sentence;
+            document.getElementById('quiz-counter').innerText = `Question ${currentQuizIndex + 1} of ${quizTrack.length}`;
+            document.getElementById('quiz-score').innerText = `Score: ${quizScore}`;
+            document.getElementById('quiz-input').value = "";
+            document.getElementById('quiz-hint').innerText = `Hint: starts with letter "${data.word[0].toUpperCase()}"`;
+        }
+        function checkQuizAnswer() {
+            const val = document.getElementById('quiz-input').value.toLowerCase().trim();
+            const correct = quizTrack[currentQuizIndex].word.toLowerCase();
+            const btn = document.getElementById('quiz-submit-btn');
+            const rect = btn.getBoundingClientRect();
+            const banner = document.getElementById('quiz-feedback-banner');
+            
+            if(val === correct) {
+                quizScore++; playSound('success');
+                confetti({ particleCount: 40, origin: { x: rect.left / window.innerWidth, y: rect.top / window.innerHeight } });
+                currentQuizIndex++;
+                renderQuizQuestion();
+            } else { 
+                playSound('fail'); 
+                // Show in-app banner alert instead of annoying popup alert
+                banner.className = "w-full p-3 mb-3 rounded-lg text-sm font-semibold text-red-800 bg-red-100 border border-red-200 block animate-shake";
+                banner.innerText = `Incorrect. The correct term was "${correct.toUpperCase()}". Let's try the next one!`;
+                
+                // Allow user to view feedback briefly before advancing automatically
+                setTimeout(() => {
+                    currentQuizIndex++;
+                    renderQuizQuestion();
+                }, 2500);
+            }
+        }
+        function resetQuiz() { 
+            quizTrack = shuffleArray(rawVocabulary); // reshuffle track on restart
+            currentQuizIndex = 0; 
+            quizScore = 0; 
+            renderQuizQuestion(); 
+        }
+
+        // --- MULTIPLE CHOICE OPTION QUIZ ---
+        function renderMultipleChoiceQuestion() {
+            const banner = document.getElementById('multi-feedback-banner');
+            banner.classList.add('hidden');
+
+            if (currentMultiIndex >= multiTrack.length) {
+                document.getElementById('multi-box').classList.add('hidden');
+                document.getElementById('multi-result-screen').classList.remove('hidden');
+                document.getElementById('multi-final-text').innerText = `Total Score: ${multiScore}/${multiTrack.length}`;
+                return;
+            }
+            document.getElementById('multi-box').classList.remove('hidden');
+            document.getElementById('multi-result-screen').classList.add('hidden');
+            
+            const currentItem = multiTrack[currentMultiIndex];
+            document.getElementById('multi-definition-text').innerText = currentItem.meaning;
+            document.getElementById('multi-counter').innerText = `Question ${currentMultiIndex + 1} of ${multiTrack.length}`;
+            document.getElementById('multi-score').innerText = `Score: ${multiScore}`;
+
+            let options = [currentItem.word];
+            while (options.length < 4) {
+                let randomWord = rawVocabulary[Math.floor(Math.random() * rawVocabulary.length)].word;
+                if (!options.includes(randomWord)) options.push(randomWord);
+            }
+            options.sort(() => Math.random() - 0.5);
+
+            const grid = document.getElementById('multi-options-grid');
+            grid.innerHTML = "";
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "w-full p-3 bg-slate-50 border border-slate-200 hover:border-teal-500 hover:bg-teal-50 font-semibold text-sm rounded-xl capitalize transition text-left cursor-pointer";
+                btn.onclick = (e) => selectMultipleChoiceAnswer(opt, currentItem.word, e);
+                btn.innerText = opt;
+                grid.appendChild(btn);
+            });
+        }
+        function selectMultipleChoiceAnswer(selected, exactAnswer, event) {
+            const rect = event.target.getBoundingClientRect();
+            const banner = document.getElementById('multi-feedback-banner');
+            
+            if (selected === exactAnswer) {
+                multiScore++; playSound('success');
+                confetti({ particleCount: 40, origin: { x: rect.left / window.innerWidth, y: rect.top / window.innerHeight } });
+                currentMultiIndex++; 
+                renderMultipleChoiceQuestion();
+            } else { 
+                playSound('fail'); 
+                banner.className = "w-full p-3 mb-3 rounded-lg text-sm font-semibold text-red-800 bg-red-100 border border-red-200 block";
+                banner.innerText = `Incorrect. The answer was: "${exactAnswer.toUpperCase()}"`;
+                
+                setTimeout(() => {
+                    currentMultiIndex++; 
+                    renderMultipleChoiceQuestion();
+                }, 2500);
+            }
+        }
+        function resetMultipleChoice() { 
+            multiTrack = shuffleArray(rawVocabulary); // reshuffle track on restart
+            currentMultiIndex = 0; 
+            multiScore = 0; 
+            renderMultipleChoiceQuestion(); 
+        }
+
+        // --- CLINICAL SPELLING BEE ---
+        function renderSpellingQuestion() {
+            const banner = document.getElementById('spell-feedback-banner');
+            banner.classList.add('hidden');
+
+            if (currentSpellIndex >= spellTrack.length) {
+                document.getElementById('spell-box').classList.add('hidden');
+                document.getElementById('spell-result-screen').classList.remove('hidden');
+                document.getElementById('spell-final-text').innerText = `Final Score: ${spellScore}/${spellTrack.length}`;
+                return;
+            }
+            document.getElementById('spell-box').classList.remove('hidden');
+            document.getElementById('spell-result-screen').classList.add('hidden');
+            
+            const data = spellTrack[currentSpellIndex];
+            document.getElementById('spell-counter').innerText = `Word ${currentSpellIndex + 1} of ${spellTrack.length}`;
+            document.getElementById('spell-score').innerText = `Score: ${spellScore}`;
+            document.getElementById('spell-meaning-hint').innerText = `Definition Context: ${data.meaning}`;
+            document.getElementById('spell-input').value = "";
+            
+            setTimeout(() => playWordAudio(data.word), 400);
+        }
+        function playSpellingAudio() { playWordAudio(spellTrack[currentSpellIndex].word); }
+        function checkSpellingAnswer() {
+            const val = document.getElementById('spell-input').value.toLowerCase().trim();
+            const correct = spellTrack[currentSpellIndex].word.toLowerCase();
+            const btn = document.getElementById('spell-submit-btn');
+            const rect = btn.getBoundingClientRect();
+            const banner = document.getElementById('spell-feedback-banner');
+            
+            if (val === correct) {
+                spellScore++; playSound('success');
+                confetti({ particleCount: 40, origin: { x: rect.left / window.innerWidth, y: rect.top / window.innerHeight } });
+                currentSpellIndex++; 
+                renderSpellingQuestion();
+            } else { 
+                playSound('fail'); 
+                banner.className = "w-full p-3 mb-3 rounded-lg text-sm font-semibold text-red-800 bg-red-100 border border-red-200 block";
+                banner.innerText = `Oops! Incorrect spelling. The correct word is: "${correct.toUpperCase()}"`;
+                
+                setTimeout(() => {
+                    currentSpellIndex++; 
+                    renderSpellingQuestion();
+                }, 2500);
+            }
+        }
+        function resetSpelling() { 
+            spellTrack = shuffleArray(rawVocabulary); // reshuffle track on restart
+            currentSpellIndex = 0; 
+            spellScore = 0; 
+            renderSpellingQuestion(); 
+        }
+
+        // --- SAFETY DIALOG INTERFACES ---
+        function requestRedo(type) {
+            pendingActionTarget = type;
+            document.getElementById('confirm-modal').classList.remove('hidden');
+        }
+        function closeConfirmation(shouldReset) {
+            document.getElementById('confirm-modal').classList.add('hidden');
+            if (shouldReset && pendingActionTarget) {
+                if(pendingActionTarget === 'quiz') resetQuiz();
+                if(pendingActionTarget === 'multi') resetMultipleChoice();
+                if(pendingActionTarget === 'spell') resetSpelling();
+            }
+            pendingActionTarget = null;
+        }
+
+        // Initialize App components
+        window.onload = function() {
+            buildGlossary();
+            renderFlashcard();
         };
     </script>
 </body>
